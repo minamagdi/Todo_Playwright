@@ -1,15 +1,22 @@
 import {expect , test} from '@playwright/test';
 import {faker} from '@faker-js/faker';
+import User from '../modals/User';
 
 
 test('User should be able to add new todo task', async ({page, request, context}) => {
+    const user = new User(
+        faker.person.firstName(),
+        faker.person.lastName(),
+        faker.internet.exampleEmail(),
+        'Password@123'
+    );
     // api request to create a new user
     const response = await request.post('https://todo.qacart.com/api/v1/users/register', {
         data: {
-            firstName: faker.person.firstName(),
-            lastName: faker.person.lastName(),
-            email: faker.internet.exampleEmail(),
-            password: 'Password@123'
+            firstName: user.getFirstName(),
+            lastName: user.getLastName(),
+            email: user.getEmail(),
+            password: user.getPassword()
         }
     });
     console.log(await response.json());
@@ -43,29 +50,57 @@ test('User should be able to add new todo task', async ({page, request, context}
 })
 
 
-test('User should be able to delete todo task', async ({page}) => {
-    const uniqueEmail = faker.internet.exampleEmail();
-    const uniqueFirstName = faker.person.firstName();
-    const uniqueLastName = faker.person.lastName();
-    await page.goto('/signup');
-    await page.locator('[data-testid="first-name"]').fill(uniqueFirstName);
-    await page.locator('[data-testid="last-name"]').fill(uniqueLastName);
-    console.log('Using email:', uniqueEmail);
-    console.log('Using first name:', uniqueFirstName);
-    console.log('Using last name:', uniqueLastName);
-    await page.locator('[data-testid="email"]').fill(uniqueEmail);
-    await page.locator('[data-testid="password"]').fill('Password123!');
-    await page.locator('[data-testid="confirm-password"]').fill('Password123!');
-    await page.locator('[data-testid="submit"]').click();
-    const welcomeMessage = page.locator('h2[data-testid="welcome"]');
-    await expect(page).toHaveURL('/todo');
-    await expect(welcomeMessage).toBeVisible();
-    await page.locator('[data-testid="add"]').click();
-    await page.locator('[data-testid="new-todo"]').fill('New todo task');
-    await page.locator('[data-testid="submit-newTask"]').click();
-    await expect(page.locator('[data-testid="todo-text"]')).toHaveText('New todo task');
+test('User should be able to delete todo task', async ({page, request, context}) => {
+    const user = new User(
+        faker.person.firstName(),
+        faker.person.lastName(),
+        faker.internet.exampleEmail(),
+        'Password@123'
+    );
+     // api request to create a new user
+    const response = await request.post('https://todo.qacart.com/api/v1/users/register', {
+        data: {
+            firstName: user.getFirstName(),
+            lastName: user.getLastName(),
+            email: user.getEmail(),
+            password: user.getPassword()
+        }
+    });
+    console.log(await response.json());
+    const responseBody = await response.json();
+    const accessToken = responseBody.access_token;
+    const userID = responseBody.userID;
+    const firstName = responseBody.firstName;
 
-    await page.locator('[data-testid="delete"]').click();
+    await request.post("https://todo.qacart.com/api/v1/tasks", {
+        data: {
+            item: 'New todo task',
+            isCompleted: false,
+        },
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        }
+    });
+    
+    await context.addCookies([
+        {
+            name: 'access_token',
+            value: accessToken,
+            url: 'https://todo.qacart.com',
+        },
+        {
+            name: 'userID',
+            value: userID,
+            url: 'https://todo.qacart.com',
+        },
+        {
+            name: 'firstName',
+            value: firstName,
+            url: 'https://todo.qacart.com',
+        }
+    ]);
+    await page.goto('/todo');
+    await page.locator('[data-testid="delete"]').first().click();
     await expect(page.locator('[data-testid="no-todos"]')).toHaveText('No Available Todos');
 })
 
