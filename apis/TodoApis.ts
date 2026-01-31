@@ -1,8 +1,7 @@
 import { APIRequestContext } from "@playwright/test";
 import User from "../modals/User";
 
-
-export default class UserApis {
+export default class TodoApis {
 
     private request: APIRequestContext;
     private baseURL: string = process.env.BASE_URL || 'https://todo.qacart.com';
@@ -10,15 +9,15 @@ export default class UserApis {
         this.request = request;
     }
 
-    async register(user: User) {
-        return await this.request.post(this.baseURL + `/api/v1/users/register`, {
+    async addTodoApi(itemName: string, user : User) {
+        return await this.request.post(this.baseURL + `/api/v1/tasks`, {
             data: {
-                firstName: user.getFirstName(),
-                lastName: user.getLastName(),
-                email: user.getEmail(),
-                password: user.getPassword()
+                item: itemName,
+                isCompleted: false,
+            },
+            headers: {
+                Authorization: `Bearer ${user.getAccessToken()}`,
             }
         });
     }
-
 }

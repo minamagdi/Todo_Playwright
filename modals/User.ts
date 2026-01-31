@@ -30,4 +30,12 @@ export default class User {
         return this.password;
     }
 
+    getAccessToken(): string | undefined {
+        return this.accessToken;
+    }
+
+    setAccessToken(token: string): void {
+        this.accessToken = token;
+    }
+
 }

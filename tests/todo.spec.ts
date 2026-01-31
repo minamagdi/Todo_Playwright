@@ -1,7 +1,8 @@
 import {expect , test} from '@playwright/test';
 import {faker} from '@faker-js/faker';
 import User from '../modals/User';
-
+import TodoApis from '../apis/TodoApis';
+import RegisterPage from '../pages/Register.page';
 
 test('User should be able to add new todo task', async ({page, request, context}) => {
     const user = new User(
@@ -10,38 +11,8 @@ test('User should be able to add new todo task', async ({page, request, context}
         faker.internet.exampleEmail(),
         'Password@123'
     );
-    // api request to create a new user
-    const response = await request.post('https://todo.qacart.com/api/v1/users/register', {
-        data: {
-            firstName: user.getFirstName(),
-            lastName: user.getLastName(),
-            email: user.getEmail(),
-            password: user.getPassword()
-        }
-    });
-    console.log(await response.json());
-    const responseBody = await response.json();
-    const accessToken = responseBody.access_token;
-    const userID = responseBody.userID;
-    const firstName = responseBody.firstName;
-
-    await context.addCookies([
-        {
-            name: 'access_token',
-            value: accessToken,
-            url: 'https://todo.qacart.com',
-        },
-        {
-            name: 'userID',
-            value: userID,
-            url: 'https://todo.qacart.com',
-        },
-        {
-            name: 'firstName',
-            value: firstName,
-            url: 'https://todo.qacart.com',
-        }
-    ]);
+    const registerPage = new RegisterPage(page, request, context);
+    await registerPage.registerUsingApi(user);
     await page.goto('/todo');
     await page.locator('[data-testid="add"]').click();
     await page.locator('[data-testid="new-todo"]').fill('New todo task');
@@ -57,48 +28,16 @@ test('User should be able to delete todo task', async ({page, request, context})
         faker.internet.exampleEmail(),
         'Password@123'
     );
-     // api request to create a new user
-    const response = await request.post('https://todo.qacart.com/api/v1/users/register', {
-        data: {
-            firstName: user.getFirstName(),
-            lastName: user.getLastName(),
-            email: user.getEmail(),
-            password: user.getPassword()
-        }
-    });
-    console.log(await response.json());
-    const responseBody = await response.json();
-    const accessToken = responseBody.access_token;
-    const userID = responseBody.userID;
-    const firstName = responseBody.firstName;
+    const registerPage = new RegisterPage(page, request, context);
+    const response = await registerPage.registerUsingApi(user);
 
-    await request.post("https://todo.qacart.com/api/v1/tasks", {
-        data: {
-            item: 'New todo task',
-            isCompleted: false,
-        },
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        }
-    });
-    
-    await context.addCookies([
-        {
-            name: 'access_token',
-            value: accessToken,
-            url: 'https://todo.qacart.com',
-        },
-        {
-            name: 'userID',
-            value: userID,
-            url: 'https://todo.qacart.com',
-        },
-        {
-            name: 'firstName',
-            value: firstName,
-            url: 'https://todo.qacart.com',
-        }
-    ]);
+    user.setAccessToken((await response.json()).access_token);
+    const addTodoResponse = await new TodoApis(request).addTodoApi('To be deleted', user);
+    const addTodoResponseBody = await addTodoResponse.json();
+    console.log(addTodoResponseBody);
+
+    expect (addTodoResponse.status()).toBe(201);
+    expect (addTodoResponseBody.item).toBe('To be deleted');
     await page.goto('/todo');
     await page.locator('[data-testid="delete"]').first().click();
     await expect(page.locator('[data-testid="no-todos"]')).toHaveText('No Available Todos');
@@ -201,7 +140,7 @@ test('User should be able to register new todo task', async ({page, request, con
     // //         url: 'https://todo.qacart.com',
     // //     }
     ]);
-    await page.pause();
+
     await page.goto('/en');
     // // await page.locator('[data-testid="add"]').click();
     // // await page.locator('[data-testid="new-todo"]').fill('New todo task');
