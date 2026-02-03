@@ -41,6 +41,7 @@ export default class TodoPage {
     }
 
     async assertNoTodosMessageIsShown() {
+        await this.page.waitForLoadState('networkidle');
         await this.assertions.assertElementHasText(this.noTodosMessage, 'No Available Todos');
     }
 
