@@ -2,8 +2,8 @@ import { expect, Locator, Page } from "@playwright/test";
 
 export default class Assertions {
     async assertElementHasText(element: Locator, expectedText: string) {
-        const actualText = await element.innerText();
-        expect(actualText).toBe(expectedText);
+        // const actualText = await element.haveText();
+        expect(element).toHaveText(expectedText);
     }
 
     async assertElementIsVisible(element: Locator) {

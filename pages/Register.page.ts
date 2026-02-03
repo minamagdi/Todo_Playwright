@@ -3,6 +3,7 @@ import User from "../modals/User";
 import Actions from "../wrapper/Actions";
 import Assertions from "../wrapper/Assertions";
 import UserApis from "../apis/UserApis";
+import config  from "./../playwright.config"
 
 export default class RegisterPage {
     private page: Page;
@@ -72,6 +73,7 @@ export default class RegisterPage {
         const response = await new UserApis(this.request!).register(user);
         console.log(await response.json());
         const responseBody = await response.json();
+        expect(response.status()).toBe(201);
         const accessToken = responseBody.access_token;
         const userID = responseBody.userID;
         const firstName = responseBody.firstName;
@@ -80,17 +82,17 @@ export default class RegisterPage {
             {
                 name: 'access_token',
                 value: accessToken,
-                url: 'https://todo.qacart.com',
+                url: config.use?.baseURL,
             },
             {
                 name: 'userID',
                 value: userID,
-                url: 'https://todo.qacart.com',
+                url: config.use?.baseURL,
             },
             {
                 name: 'firstName',
                 value: firstName,
-                url: 'https://todo.qacart.com',
+                url: config.use?.baseURL,
             }
         ]);
         return response

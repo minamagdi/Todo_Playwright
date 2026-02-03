@@ -1,46 +1,33 @@
-import {expect , test} from '@playwright/test';
-import {faker} from '@faker-js/faker';
+import { test } from '@playwright/test';
 import User from '../modals/User';
-import TodoApis from '../apis/TodoApis';
 import RegisterPage from '../pages/Register.page';
+import NewTodoPage from '../pages/NewTodo.page';
+import TodoPage from '../pages/Todo.page';
 
 test('User should be able to add new todo task', async ({page, request, context}) => {
-    const user = new User(
-        faker.person.firstName(),
-        faker.person.lastName(),
-        faker.internet.exampleEmail(),
-        'Password@123'
-    );
     const registerPage = new RegisterPage(page, request, context);
+    const newTodoPage = new NewTodoPage(page);
+    const user = new User();
+
     await registerPage.registerUsingApi(user);
-    await page.goto('/todo');
-    await page.locator('[data-testid="add"]').click();
-    await page.locator('[data-testid="new-todo"]').fill('New todo task');
-    await page.locator('[data-testid="submit-newTask"]').click();
-    await expect(page.locator('[data-testid="todo-text"]')).toHaveText('New todo task');
+    await newTodoPage.navigateToNewTodoPage();
+    await newTodoPage.createNewTodo('New todo task');
+    await newTodoPage.assertNewTodoIsCreated('New todo task');
 })
 
 
 test('User should be able to delete todo task', async ({page, request, context}) => {
-    const user = new User(
-        faker.person.firstName(),
-        faker.person.lastName(),
-        faker.internet.exampleEmail(),
-        'Password@123'
-    );
     const registerPage = new RegisterPage(page, request, context);
+    const todoPage = new TodoPage(page);
+    const newTodoPage = new NewTodoPage(page, request);
+    const user = new User();
+
     const response = await registerPage.registerUsingApi(user);
-
     user.setAccessToken((await response.json()).access_token);
-    const addTodoResponse = await new TodoApis(request).addTodoApi('To be deleted', user);
-    const addTodoResponseBody = await addTodoResponse.json();
-    console.log(addTodoResponseBody);
-
-    expect (addTodoResponse.status()).toBe(201);
-    expect (addTodoResponseBody.item).toBe('To be deleted');
-    await page.goto('/todo');
-    await page.locator('[data-testid="delete"]').first().click();
-    await expect(page.locator('[data-testid="no-todos"]')).toHaveText('No Available Todos');
+    await newTodoPage.addNewTodoUsingApi('Delete me', user);
+    await registerPage.load();
+    await todoPage.deleteFirstTodo();
+    await todoPage.assertNoTodosMessageIsShown();
 })
 
 
